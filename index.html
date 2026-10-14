@@ -121,14 +121,6 @@
        While recent works have indicated that training-free few-step sampling solvers can achieve nearly quality-lossless acceleration for diffusion and flow-matching models, their real impact on production diffusion generation is not fully understood. In this work, we develop a comprehensive systematization for training-free few-step sampling on diffusion models by enumerating the quality metrics that the literature and industry actually use to judge sampling acceleration. We present a critical analysis under practical production environments, characterizing the realistic quality dimensions a service cares about—human-preference alignment, aesthetic quality, dense instruction following, and in-image long-text rendering—which the standard FID/CLIP protocol overlooks. Our findings are rather surprising: contrary to the established belief that few-step solvers are virtually quality-lossless, we show that they remain near-lossless only on simple distribution-alignment metrics yet degrade substantially under the metrics a production service actually cares about, and thus deliver no effective few-step acceleration. We go even further and propose <b>ParaLin++</b>, a novel state-of-the-art parallel sampling method built on our conference ParaLin, and show via an extensive set of experiments across Stable Diffusion-v2, LSUN Church, FLUX.1-dev, and Ming-Flash-Omni 2.0 that it preserves the full-step Euler quality profile at <b>3.6×–5.2×</b> (up to <b>71.4×</b> at 1000 steps), <b>1.68×</b> on FLUX and <b>1.21×</b> on Ming.
      </p>
 
-    <p class="title is-3 mt-5 has-text-centered">Acceleration Showcase (Up to 71.4× Speedup)</p>
-    <p class="subtitle is-5 has-text-centered mb-5">
-      ParaLin++ achieves massive speedup without quality loss.<br />
-      Our method (top) vs. Baseline (bottom).
-    </p>
-    <img src="./static/videos/accelerate_compress.gif" width="100%">
-
-
     <p class="title is-3 mt-6 has-text-centered"> The Metric Gap </p>
     <p class="content is-size-5 has-text-justified">
       The decisive axis of a training-free accelerator is the <b>metric</b> that certifies it “quality-lossless”, not the speed lever it uses. The academic literature stops at distributional and text-alignment proxies, while production services are judged on a much deeper quality profile:
