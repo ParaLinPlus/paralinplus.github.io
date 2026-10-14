@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="description"
-          content="ParaLin++: a step-parity parallel sampling solver for production diffusion models. Our industrial-quality audit shows FID-lossless few-step solvers are not production-ready; ParaLin++ keeps the full-step profile at 1.68x (FLUX) and 3.6x-5.2x (SD-v2 / LSUN Church).">
+          content="ParaLin++: a step-parity parallel sampling solver for production diffusion models. Our industrial-quality audit shows FID-lossless few-step solvers are not production-ready; ParaLin++ keeps the full-step profile at 1.68x (FLUX) and 2.6x-4.8x (SD-v2 / LSUN Church).">
     <meta name="keywords" content="Diffusion Models, Flow Matching, Parallel Sampling, Few-Step Solvers, GenEval, DPG-Bench, LongTextBench, Production Diffusion, ParaLin++">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ParaLin++ | Back to the Drawing Board: A Critical Evaluation of Few-Step Solvers for Production Diffusion Models</title>
@@ -118,7 +118,7 @@
 
      <p class="title is-3 mt-5 has-text-centered"> Abstract </p>
      <p class="content is-size-5 has-text-justified">
-       While recent works have indicated that training-free few-step sampling solvers can achieve nearly quality-lossless acceleration for diffusion and flow-matching models, their real impact on production diffusion generation is not fully understood. In this work, we develop a comprehensive systematization for training-free few-step sampling on diffusion models by enumerating the quality metrics that the literature and industry actually use to judge sampling acceleration. We present a critical analysis under practical production environments, characterizing the realistic quality dimensions a service cares about—human-preference alignment, aesthetic quality, dense instruction following, and in-image long-text rendering—which the standard FID/CLIP protocol overlooks. Our findings are rather surprising: contrary to the established belief that few-step solvers are virtually quality-lossless, we show that they remain near-lossless only on simple distribution-alignment metrics yet degrade substantially under the metrics a production service actually cares about, and thus deliver no effective few-step acceleration. We go even further and propose <b>ParaLin++</b>, a novel state-of-the-art parallel sampling method built on our conference ParaLin, and show via an extensive set of experiments across Stable Diffusion-v2, LSUN Church, FLUX.1-dev, and Ming-Flash-Omni 2.0 that it preserves the full-step Euler quality profile at <b>3.6×–5.2×</b>, <b>1.68×</b> on FLUX and <b>1.21×</b> on Ming.
+       While recent works have indicated that training-free few-step sampling solvers can achieve nearly quality-lossless acceleration for diffusion and flow-matching models, their real impact on production diffusion generation is not fully understood. In this work, we develop a comprehensive systematization for training-free few-step sampling on diffusion models by enumerating the quality metrics that the literature and industry actually use to judge sampling acceleration. We present a critical analysis under practical production environments, characterizing the realistic quality dimensions a service cares about—human-preference alignment, aesthetic quality, dense instruction following, and in-image long-text rendering—which the standard FID/CLIP protocol overlooks. Our findings are rather surprising: contrary to the established belief that few-step solvers are virtually quality-lossless, we show that they remain near-lossless only on simple distribution-alignment metrics yet degrade substantially under the metrics a production service actually cares about, and thus deliver no effective few-step acceleration. We go even further and propose <b>ParaLin++</b>, a novel state-of-the-art parallel sampling method built on our conference ParaLin, and show via an extensive set of experiments across Stable Diffusion-v2, LSUN Church, FLUX.1-dev, and Ming-Flash-Omni 2.0 that it preserves the full-step Euler quality profile at <b>2.6×–4.8×</b>, <b>1.68×</b> on FLUX and <b>1.21×</b> on Ming.
      </p>
 
     <p class="title is-3 mt-6 has-text-centered"> The Metric Gap </p>
@@ -263,23 +263,23 @@
       <tr><td rowspan="5">50</td><td>DDIM</td><td>50</td><td>50</td><td>25.6</td><td>57.2</td><td>6.3</td><td>1.0×</td></tr>
       <tr><td>DDIM + ParaDiGMS</td><td>21</td><td>132</td><td>25.6</td><td>56.9</td><td>3.3</td><td>1.9×</td></tr>
       <tr><td>DDIM + ParaSolver</td><td>13</td><td>83</td><td>25.6</td><td>56.9</td><td>1.9</td><td>3.3×</td></tr>
-      <tr><td>DDIM + ParaLin</td><td>13</td><td>73</td><td>25.6</td><td>57.1</td><td>1.6</td><td>3.9×</td></tr>
+      <tr><td>DDIM + ParaLin</td><td>13</td><td>73</td><td>25.6</td><td>57.1</td><td>1.7</td><td>3.7×</td></tr>
       <tr class="hl"><td>DDIM + ParaLin++</td><td><b>10</b></td><td><b>69</b></td><td>25.5</td><td>57.0</td><td><b>1.3</b></td><td class="up">4.8×</td></tr>
       <tr><td rowspan="5">25</td><td>DDIM</td><td>25</td><td>25</td><td>25.4</td><td>62.9</td><td>3.4</td><td>1.0×</td></tr>
       <tr><td>DDIM + ParaDiGMS</td><td>18</td><td>53</td><td>25.4</td><td>62.8</td><td>3.2</td><td>1.2×</td></tr>
-      <tr><td>DDIM + ParaSolver</td><td>11</td><td>49</td><td>25.4</td><td>61.9</td><td>1.2</td><td>2.8×</td></tr>
-      <tr><td>DDIM + ParaLin</td><td>11</td><td>42</td><td>25.4</td><td>61.8</td><td>1.1</td><td>3.1×</td></tr>
-      <tr class="hl"><td>DDIM + ParaLin++</td><td><b>9</b></td><td><b>40</b></td><td>25.4</td><td>61.9</td><td><b>0.9</b></td><td class="up">3.7×</td></tr>
+      <tr><td>DDIM + ParaSolver</td><td>11</td><td>49</td><td>25.4</td><td>61.9</td><td>1.6</td><td>2.1×</td></tr>
+      <tr><td>DDIM + ParaLin</td><td>11</td><td>42</td><td>25.4</td><td>61.8</td><td>1.55</td><td>2.2×</td></tr>
+      <tr class="hl"><td>DDIM + ParaLin++</td><td><b>9</b></td><td><b>40</b></td><td>25.4</td><td>61.9</td><td><b>1.3</b></td><td class="up">2.6×</td></tr>
       <tr><td rowspan="5">50</td><td>DPMSolver</td><td>50</td><td>50</td><td>25.6</td><td>57.2</td><td>6.3</td><td>1.0×</td></tr>
       <tr><td>DPMSolver + ParaDiGMS</td><td>25</td><td>132</td><td>25.6</td><td>57.2</td><td>3.3</td><td>1.8×</td></tr>
       <tr><td>DPMSolver + ParaSolver</td><td>15</td><td>96</td><td>25.6</td><td>57.1</td><td>2.2</td><td>3.1×</td></tr>
-      <tr><td>DPMSolver + ParaLin</td><td>14</td><td>93</td><td>25.6</td><td>57.1</td><td>1.7</td><td>3.9×</td></tr>
-      <tr class="hl"><td>DPMSolver + ParaLin++</td><td><b>10</b></td><td><b>77</b></td><td>25.6</td><td>57.1</td><td><b>1.2</b></td><td class="up">5.2×</td></tr>
+      <tr><td>DPMSolver + ParaLin</td><td>14</td><td>93</td><td>25.6</td><td>57.1</td><td>1.9</td><td>3.3×</td></tr>
+      <tr class="hl"><td>DPMSolver + ParaLin++</td><td><b>10</b></td><td><b>77</b></td><td>25.6</td><td>57.1</td><td><b>1.35</b></td><td class="up">4.7×</td></tr>
       <tr><td rowspan="5">25</td><td>DPMSolver</td><td>25</td><td>25</td><td>25.4</td><td>62.3</td><td>3.2</td><td>1.0×</td></tr>
       <tr><td>DPMSolver + ParaDiGMS</td><td>15</td><td>81</td><td>25.4</td><td>62.3</td><td>2.2</td><td>1.5×</td></tr>
       <tr><td>DPMSolver + ParaSolver</td><td>11</td><td>58</td><td>25.4</td><td>62.2</td><td>1.5</td><td>2.1×</td></tr>
-      <tr><td>DPMSolver + ParaLin</td><td>10</td><td>55</td><td>25.4</td><td>62.1</td><td>1.2</td><td>2.7×</td></tr>
-      <tr class="hl"><td>DPMSolver + ParaLin++</td><td><b>8</b></td><td><b>46</b></td><td>25.4</td><td>62.1</td><td><b>0.9</b></td><td class="up">3.6×</td></tr>
+      <tr><td>DPMSolver + ParaLin</td><td>10</td><td>55</td><td>25.4</td><td>62.1</td><td>1.4</td><td>2.3×</td></tr>
+      <tr class="hl"><td>DPMSolver + ParaLin++</td><td><b>8</b></td><td><b>46</b></td><td>25.4</td><td>62.1</td><td><b>1.1</b></td><td class="up">2.9×</td></tr>
     </table>
     </div>
 
@@ -295,8 +295,8 @@
       <tr><td rowspan="5">25</td><td>DDIM</td><td>25</td><td>25</td><td>15.6</td><td>1.1</td><td>1.0×</td></tr>
       <tr><td>DDIM + ParaDiGMS</td><td>15</td><td>96</td><td>15.7</td><td>0.8</td><td>1.4×</td></tr>
       <tr><td>DDIM + ParaSolver</td><td>10</td><td>44</td><td>15.7</td><td>0.5</td><td>2.2×</td></tr>
-      <tr><td>DDIM + ParaLin</td><td>10</td><td>39</td><td>15.7</td><td>0.4</td><td>2.8×</td></tr>
-      <tr class="hl"><td>DDIM + ParaLin++</td><td>8</td><td>33</td><td>15.7</td><td><b>0.3</b></td><td class="up">3.6×</td></tr>
+      <tr><td>DDIM + ParaLin</td><td>10</td><td>39</td><td>15.7</td><td>0.45</td><td>2.4×</td></tr>
+      <tr class="hl"><td>DDIM + ParaLin++</td><td>8</td><td>33</td><td>15.7</td><td><b>0.36</b></td><td class="up">3.1×</td></tr>
     </table>
     </div>
 
