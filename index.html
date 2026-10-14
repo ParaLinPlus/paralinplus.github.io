@@ -1,235 +1,335 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ParaLin++ | Back to the Drawing Board: A Critical Evaluation of Few-Step Solvers for Production Diffusion Models</title>
-<meta name="description" content="ParaLin++: a step-parity parallel sampling solver for production diffusion models. We audit training-free few-step solvers under industrial-quality metrics and show FID-lossless does not mean production-ready.">
-<style>
-  :root{
-    --ink:#17203a; --muted:#5a6478; --accent:#3b5bdb; --accent2:#7048e8;
-    --card:#ffffff; --bg:#f6f8fc; --line:#e3e8f2; --good:#0ca678; --bad:#e03131;
-  }
-  *{margin:0;padding:0;box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
-       color:var(--ink);background:var(--bg);line-height:1.65;}
-  .wrap{max-width:1060px;margin:0 auto;padding:0 24px}
-  /* ---------- hero ---------- */
-  .hero{background:linear-gradient(135deg,#1b2450 0%,#2b3a8c 55%,#4c63d2 100%);color:#fff;padding:72px 0 60px;}
-  .hero .venue{display:inline-block;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);
-       padding:4px 14px;border-radius:999px;font-size:14px;letter-spacing:.4px;margin-bottom:20px}
-  .hero h1{font-size:clamp(26px,4vw,40px);line-height:1.25;font-weight:700;max-width:900px}
-  .hero h1 .thin{font-weight:400;opacity:.92}
-  .authors{margin-top:22px;font-size:18px}
-  .authors a{color:#cdd7ff;text-decoration:none;border-bottom:1px dotted #cdd7ff}
-  .affil{margin-top:6px;font-size:14.5px;color:#b9c4ee}
-  .btns{margin-top:30px;display:flex;flex-wrap:wrap;gap:14px}
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:10px;
-       font-weight:600;font-size:16px;text-decoration:none;transition:.18s;border:1px solid transparent}
-  .btn.primary{background:#fff;color:#22307a}
-  .btn.primary:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.25)}
-  .btn.ghost{background:rgba(255,255,255,.10);color:#fff;border-color:rgba(255,255,255,.45)}
-  .btn.ghost:hover{background:rgba(255,255,255,.2)}
-  /* ---------- sections ---------- */
-  section{padding:56px 0}
-  h2{font-size:28px;margin-bottom:18px;display:flex;align-items:center;gap:12px}
-  h2::before{content:"";width:6px;height:26px;border-radius:3px;
-       background:linear-gradient(var(--accent),var(--accent2))}
-  h3{font-size:20px;margin:26px 0 10px}
-  p{margin-bottom:14px}
-  .lead{font-size:17.5px;color:#28324e}
-  .muted{color:var(--muted)}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
-       padding:26px 28px;box-shadow:0 2px 10px rgba(23,32,58,.05)}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
-  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
-  /* ---------- key numbers ---------- */
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:22px 0 6px}
-  .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 18px;text-align:center}
-  .kpi .v{font-size:30px;font-weight:750;color:var(--accent)}
-  .kpi .l{font-size:13.5px;color:var(--muted);margin-top:4px;line-height:1.4}
-  /* ---------- table ---------- */
-  table{width:100%;border-collapse:collapse;font-size:15px;background:#fff}
-  th,td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--line)}
-  th{background:#eef2fb;font-weight:650}
-  td:first-child,th:first-child{text-align:left}
-  tr.hl{background:#eaf1ff;font-weight:650}
-  .up{color:var(--good);font-weight:600}
-  .down{color:var(--bad);font-weight:600}
-  .tblcap{font-size:13.5px;color:var(--muted);margin-top:10px}
-  /* ---------- figures ---------- */
-  figure{margin:8px 0 6px;text-align:center}
-  figure img{max-width:100%;border-radius:12px;border:1px solid var(--line);background:#fff}
-  figcaption{font-size:14px;color:var(--muted);margin-top:10px;text-align:left}
-  /* ---------- findings list ---------- */
-  ul.tick{list-style:none;margin-top:6px}
-  ul.tick li{padding-left:30px;position:relative;margin-bottom:12px}
-  ul.tick li::before{content:"▸";color:var(--accent);font-weight:700;position:absolute;left:6px}
-  code{font-family:ui-monospace,Consolas,monospace;background:#eef1f8;border-radius:5px;padding:1px 6px;font-size:92%}
-  pre{background:#10162b;color:#dbe4ff;border-radius:12px;padding:18px 20px;overflow:auto;font-size:14px;line-height:1.5}
-  .footer{background:#10162b;color:#8b96b8;text-align:center;padding:30px 0;font-size:14px}
-  .notice{background:#fff8e6;border:1px solid #f3e2a9;border-radius:12px;padding:16px 20px;font-size:15px}
-</style>
+    <meta charset="utf-8">
+    <meta name="description"
+          content="ParaLin++: a step-parity parallel sampling solver for production diffusion models. Our industrial-quality audit shows FID-lossless few-step solvers are not production-ready; ParaLin++ keeps the full-step profile at 1.68x (FLUX) and up to 71.4x (1000-step DDPM).">
+    <meta name="keywords" content="Diffusion Models, Flow Matching, Parallel Sampling, Few-Step Solvers, GenEval, DPG-Bench, LongTextBench, Production Diffusion, ParaLin++">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ParaLin++ | Back to the Drawing Board: A Critical Evaluation of Few-Step Solvers for Production Diffusion Models</title>
+
+    <script async src="https://www.google-analytics.com/analytics.js"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-PYVRSFMDRL');
+    </script>
+
+    <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+          rel="stylesheet">
+
+    <link rel="stylesheet" href="./static/css/bulma.min.css">
+    <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+    <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+    <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+    <link rel="stylesheet" href="./static/css/index.css">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script defer src="./static/js/fontawesome.all.min.js"></script>
+    <script src="./static/js/bulma-carousel.min.js"></script>
+    <script src="./static/js/bulma-slider.min.js"></script>
+    <script src="./static/js/index.js"></script>
+
+    <style>
+      .publication-title {
+          font-size: 40px;
+          font-weight: bold;
+          line-height: 1.2;
+          background-image: linear-gradient(to right, #b59f00, green, blue);
+          -webkit-background-clip: text;
+          -webkit-background-clip: text;
+          color: transparent;
+          background-clip: text;
+      }
+      .venue-badge{display:inline-block;background:#eef2fb;border:1px solid #d5def5;color:#22307a;
+          padding:4px 14px;border-radius:999px;font-size:15px;font-weight:600;margin-bottom:14px}
+      table.rt{width:100%;border-collapse:collapse;font-size:15px;background:#fff;margin-top:10px}
+      table.rt th,table.rt td{padding:8px 10px;text-align:center;border-bottom:1px solid #e3e8f2}
+      table.rt th{background:#eef2fb;font-weight:650}
+      table.rt td:first-child,table.rt th:first-child{text-align:left}
+      table.rt tr.hl{background:#eaf1ff;font-weight:650}
+      table.rt .up{color:#0ca678;font-weight:600}
+      table.rt .down{color:#e03131;font-weight:600}
+      .tblcap{font-size:14px;color:#666;margin-top:8px}
+      .gapcard{background:#fff;border:1px solid #e3e8f2;border-radius:12px;padding:20px 24px;height:100%}
+      .gapcard h4{font-size:19px;margin-bottom:8px}
+      .gapcard ul{margin-left:22px}
+      .gapcard li{margin-bottom:6px;font-size:16px}
+      pre.bib{background:#10162b;color:#dbe4ff;border-radius:12px;padding:16px 18px;overflow:auto;font-size:14px;line-height:1.5;text-align:left}
+    </style>
 </head>
+
 <body>
+  <section class="section">
+  <div class="container has-text-centered">
+    <span class="venue-badge">arXiv Preprint &nbsp;·&nbsp; Extension of our conference ParaLin</span>
+    <p class="title publication-title">Back to the Drawing Board:<br>A Critical Evaluation of Few-Step Solvers for Production Diffusion Models</p>
 
-<!-- ===================== HERO ===================== -->
-<div class="hero">
-  <div class="wrap">
-    <span class="venue">arXiv Preprint &nbsp;·&nbsp; Extension of our conference ParaLin</span>
-    <h1>Back to the Drawing Board:<br>
-        <span class="thin">A Critical Evaluation of Few-Step Solvers for Production Diffusion Models</span></h1>
-    <div class="authors">
-      <a href="https://jianrong-lu.github.io/">Jianrong Lu</a><sup>1</sup>,
-      Zhiyu Zhu<sup>1,2</sup>, Hui Liu<sup>3</sup>, Junhui Hou<sup>1</sup>
+    <div class="is-size-4 publication-authors">
+        <span class="author-block">Jianrong Lu<sup>1</sup> </span>
+        <span class="author-block">Zhiyu Zhu<sup>1,2</sup> </span>
+        <span class="author-block">Hui Liu<sup>3</sup> </span>
+        <span class="author-block">Junhui Hou<sup>1</sup></span>
     </div>
-    <div class="affil">
-      <sup>1</sup>City University of Hong Kong &nbsp;·&nbsp; <sup>2</sup>City University of Hong Kong (Dongguan) &nbsp;·&nbsp; <sup>3</sup>Saint Francis University
+
+    <div class="is-size-5 publication-authors">
+      <span class="author-block"><sup>1</sup>City University of Hong Kong </span>
+      <span class="author-block"><sup>2</sup>City University of Hong Kong (Dongguan) </span>
+      <span class="author-block"><sup>3</sup>Saint Francis University </span>
     </div>
-    <div class="btns">
-      <a class="btn primary" href="paper.pdf">📄 Paper (PDF)</a>
-      <a class="btn ghost" href="https://github.com/Jianrong-Lu/ParaLinPlus">💻 Code</a>
-      <a class="btn ghost" href="#bibtex">📎 BibTeX</a>
+
+    <div class="column has-text-centered">
+    <div class="publication-links">
+      <span class="link-block">
+        <a href="paper.pdf"
+            class="external-link button is-normal is-rounded is-dark">
+            <span class="icon">
+                <i class="ai ai-arxiv"></i>
+            </span>
+            <span>Paper (PDF)</span>
+        </a>
+      </span>
+      <span class="link-block">
+        <a href="https://github.com/Jianrong-Lu/ParaLinPlus"
+            class="external-link button is-normal is-rounded is-dark">
+            <span class="icon">
+              <i class="fab fa-github"></i>
+            </span>
+        <span>Code</span>
+        </a>
+      </span>
+      <span class="link-block">
+        <a href="https://parasolver-turbo.github.io/"
+            class="external-link button is-normal is-rounded is-dark">
+            <span class="icon">
+              <i class="fas fa-link"></i>
+            </span>
+        <span>Legacy Page</span>
+        </a>
+      </span>
     </div>
   </div>
-</div>
 
-<!-- ===================== ABSTRACT ===================== -->
-<section id="abstract">
-  <div class="wrap">
-    <h2>TL;DR</h2>
-    <p class="lead"><b>Few-step solvers that look &ldquo;quality-lossless&rdquo; under FID are not production-ready.</b>
-    Training-free few-step samplers (DDIM, DPM-Solver++, UniPC) are certified almost exclusively with
-    distributional proxies (FID) and coarse text–image similarity (CLIP). When audited on the quality axes a
-    production text-to-image service actually cares about — semantic composition (GenEval), dense instruction
-    following (DPG-Bench), and long in-image text rendering (LongTextBench) — they degrade sharply while their
-    FID stays within <b>0.03</b> of the full-step reference. Our step-parity solver <b>ParaLin++</b> instead keeps all
-    discrete steps and removes only the sequential latency, preserving the Euler-level industrial profile.</p>
-    <div class="kpis">
-      <div class="kpi"><div class="v">1.68×</div><div class="l">ParaLin++ speedup on FLUX.1-dev at Euler-level quality</div></div>
-      <div class="kpi"><div class="v">1.21×</div><div class="l">ParaLin++ speedup on Ming-Flash-Omni 2.0</div></div>
-      <div class="kpi"><div class="v">71.4×</div><div class="l">wall-clock speedup at 1000-step DDPM (SD-v2 / LSUN)</div></div>
-      <div class="kpi"><div class="v">−70%</div><div class="l">LongTextBench lost by 16-step UniPC/DPM-Solver++ despite matched FID</div></div>
-    </div>
-  </div>
-</section>
 
-<!-- ===================== MOTIVATION ===================== -->
-<section id="motivation" style="padding-top:0">
-  <div class="wrap">
-    <h2>The Metric Gap</h2>
-    <div class="grid2">
-      <div class="card">
-        <h3 style="margin-top:0">What academia reports</h3>
-        <p class="muted">A survey of training-free acceleration evaluations (DDPM, DDIM, DPM-Solver++, UniPC, Restart, ParaDiGMS, …) shows they stop at simple proxies:</p>
-        <ul class="tick muted">
-          <li><b>FID / sFID / IS</b> — distribution-to-distribution alignment only</li>
-          <li><b>CLIP score / CLIP-FID</b> — coarse prompt–image embedding similarity</li>
-        </ul>
-        <p class="muted">These metrics are <b>outdated for production</b>: they cannot see sample-level semantics, dense instructions, aesthetics, or in-image text.</p>
+  <div class="container is-max-desktop">
+
+     <p class="title is-3 mt-5 has-text-centered"> Abstract </p>
+     <p class="content is-size-5 has-text-justified">
+       While recent works have indicated that training-free few-step sampling solvers can achieve nearly quality-lossless acceleration for diffusion and flow-matching models, their real impact on production diffusion generation is not fully understood. In this work, we develop a comprehensive systematization for training-free few-step sampling on diffusion models by enumerating the quality metrics that the literature and industry actually use to judge sampling acceleration. We present a critical analysis under practical production environments, characterizing the realistic quality dimensions a service cares about—human-preference alignment, aesthetic quality, dense instruction following, and in-image long-text rendering—which the standard FID/CLIP protocol overlooks. Our findings are rather surprising: contrary to the established belief that few-step solvers are virtually quality-lossless, we show that they remain near-lossless only on simple distribution-alignment metrics yet degrade substantially under the metrics a production service actually cares about, and thus deliver no effective few-step acceleration. We go even further and propose <b>ParaLin++</b>, a novel state-of-the-art parallel sampling method built on our conference ParaLin, and show via an extensive set of experiments across Stable Diffusion-v2, LSUN Church, FLUX.1-dev, and Ming-Flash-Omni 2.0 that it preserves the full-step Euler quality profile at <b>3.6×–5.2×</b> (up to <b>71.4×</b> at 1000 steps), <b>1.68×</b> on FLUX and <b>1.21×</b> on Ming.
+     </p>
+
+    <p class="title is-3 mt-5 has-text-centered">Acceleration Showcase (Up to 71.4× Speedup)</p>
+    <p class="subtitle is-5 has-text-centered mb-5">
+      ParaLin++ achieves massive speedup without quality loss.<br />
+      Our method (top) vs. Baseline (bottom).
+    </p>
+    <img src="./static/videos/accelerate_compress.gif" width="100%">
+
+
+    <p class="title is-3 mt-6 has-text-centered"> The Metric Gap </p>
+    <p class="content is-size-5 has-text-justified">
+      The decisive axis of a training-free accelerator is the <b>metric</b> that certifies it “quality-lossless”, not the speed lever it uses. The academic literature stops at distributional and text-alignment proxies, while production services are judged on a much deeper quality profile:
+    </p>
+    <div class="columns mt-4">
+      <div class="column">
+        <div class="gapcard">
+          <h4>📚 What academia reports</h4>
+          <ul>
+            <li><b>FID / sFID / IS</b> — distribution-to-distribution alignment only</li>
+            <li><b>CLIP score / CLIP-FID</b> — coarse prompt–image embedding similarity</li>
+          </ul>
+          <p class="mt-2" style="color:#666;font-size:15px">Outdated for production: blind to sample-level semantics, dense instructions, aesthetics, and in-image text.</p>
+        </div>
       </div>
-      <div class="card">
-        <h3 style="margin-top:0">What production requires</h3>
-        <p class="muted">Post-trained industrial generators are judged on a deeper profile:</p>
-        <ul class="tick muted">
-          <li><b>GenEval</b> — object composition &amp; counting fidelity</li>
-          <li><b>DPG-Bench</b> — dense, multi-clause prompt following</li>
-          <li><b>LongTextBench</b> — long, legible in-image text</li>
-          <li>Human-preference &amp; aesthetic alignment</li>
-        </ul>
-        <p class="muted">We audit headline few-step claims on <b>FLUX.1-dev</b> and <b>Ming-Flash-Omni 2.0</b> under exactly these axes.</p>
+      <div class="column">
+        <div class="gapcard">
+          <h4>🏭 What production requires</h4>
+          <ul>
+            <li><b>GenEval</b> — object composition &amp; counting fidelity</li>
+            <li><b>DPG-Bench</b> — dense, multi-clause prompt following</li>
+            <li><b>LongTextBench</b> — long, legible in-image text</li>
+            <li>Human-preference &amp; aesthetic alignment</li>
+          </ul>
+        </div>
       </div>
     </div>
-  </div>
-</section>
 
-<!-- ===================== KEY RESULT ===================== -->
-<section id="results" style="padding-top:0">
-  <div class="wrap">
-    <h2>FID-Lossless ≠ Production-Ready</h2>
-    <p class="lead">On FLUX.1-dev, 16-step UniPC / DPM-Solver++ stay within <b>0.03 FID</b> of the 30-step Euler
-    reference, yet collapse on the industrial profile. ParaLin++ keeps all 30 steps, parallelizes the solve, and
-    preserves the Euler-level quality while being faster.</p>
-    <div class="card" style="padding:10px 14px 18px;overflow-x:auto">
-      <table>
-        <tr><th>Method</th><th>Regime</th><th>Steps</th><th>FID ↓</th><th>GenEval ↑</th><th>DPG-Bench ↑</th><th>LongTextBench ↑</th><th>Speedup ↑</th></tr>
-        <tr><td>Euler (reference)</td><td>Sequential</td><td>30</td><td>59.96</td><td><b>0.66</b></td><td>83.97</td><td><b>0.27</b></td><td>1.00×</td></tr>
-        <tr><td>UniPC</td><td>Few-step</td><td>16</td><td>59.99</td><td class="down">0.52 (−21%)</td><td class="down">77.46 (−6.5)</td><td class="down">0.09 (−67%)</td><td>1.81×</td></tr>
-        <tr><td>DPM-Solver++</td><td>Few-step</td><td>16</td><td>59.97</td><td class="down">0.50 (−24%)</td><td class="down">75.75 (−8.2)</td><td class="down">0.08 (−70%)</td><td>1.85×</td></tr>
-        <tr class="hl"><td>ParaLin++ (ours)</td><td>Step-parity parallel</td><td>30</td><td><b>59.94</b></td><td class="up">0.64</td><td class="up">84.24</td><td class="up">0.26</td><td class="up">1.68×</td></tr>
-      </table>
-      <p class="tblcap">Table: industrial-benchmark audit on FLUX.1-dev. Speedup measured on the same GenEval generation pass against the 30-step Euler reference, excluding model loading and scoring.</p>
-    </div>
-    <p class="lead" style="margin-top:18px">The same pattern holds across guidance strengths (CFG 0–14) and on Ming-Flash-Omni 2.0,
-    where ParaLin++ keeps the Euler-level profile (GenEval 0.87 vs. 0.88; DPG-Bench 86.99 vs. 86.86; LongTextBench 0.95 vs. 0.95) at <b>1.21×</b>.</p>
-  </div>
-</section>
 
-<!-- ===================== VISUALS ===================== -->
-<section id="visuals" style="padding-top:0">
-  <div class="wrap">
-    <h2>See the Difference</h2>
-    <div class="card">
-      <figure>
-        <img src="assets/flux_industrial_visual.png" alt="Industrial-benchmark visual comparison on FLUX.1-dev">
-        <figcaption><b>FLUX.1-dev.</b> Columns: 30-step Euler, 16-step UniPC, 16-step DPM-Solver++, 30-step ParaLin++.
-        Few-step results keep plausible low-level appearance but break semantics: the pizza gains a hole-artifact, the F1 car and boat deform,
-        and the autumn-poster text vanishes entirely. ParaLin++ stays aligned with the Euler reference.</figcaption>
-      </figure>
+    <p class="title is-3 mt-6 has-text-centered"> FID-Lossless ≠ Production-Ready </p>
+    <p class="content is-size-5 has-text-justified">
+      On FLUX.1-dev, 16-step UniPC / DPMSolver++ stay within <b>0.03 FID</b> of the 30-step Euler reference, yet collapse on the industrial profile. <b>ParaLin++</b> keeps all 30 discrete steps, parallelizes the solver iterations, and preserves the Euler-level quality while being faster:
+    </p>
+    <div style="overflow-x:auto">
+    <table class="rt">
+      <tr><th>Method</th><th>Regime</th><th>Steps</th><th>FID ↓</th><th>GenEval ↑</th><th>DPG-Bench ↑</th><th>LongTextBench ↑</th><th>Speedup ↑</th></tr>
+      <tr><td>Euler (reference)</td><td>Sequential</td><td>30</td><td>59.96</td><td><b>0.66</b></td><td>83.97</td><td><b>0.27</b></td><td>1.00×</td></tr>
+      <tr><td>UniPC</td><td>Few-step</td><td>16</td><td>59.99</td><td class="down">0.52 (−21%)</td><td class="down">77.46 (−6.5)</td><td class="down">0.09 (−67%)</td><td>1.81×</td></tr>
+      <tr><td>DPMSolver++</td><td>Few-step</td><td>16</td><td>59.97</td><td class="down">0.50 (−24%)</td><td class="down">75.75 (−8.2)</td><td class="down">0.08 (−70%)</td><td>1.85×</td></tr>
+      <tr class="hl"><td>ParaLin++ (ours)</td><td>Step-parity parallel</td><td>30</td><td><b>59.94</b></td><td class="up">0.64</td><td class="up">84.24</td><td class="up">0.26</td><td class="up">1.68×</td></tr>
+    </table>
     </div>
-    <div class="card" style="margin-top:22px">
-      <figure>
-        <img src="assets/ming_industrial_visual.png" alt="Industrial-benchmark visual comparison on Ming-Flash-Omni 2.0">
-        <figcaption><b>Ming-Flash-Omni 2.0.</b> Same protocol. Few-step solvers recolor the elephant/banana scene, wash out the desk scene,
-        and corrupt the warehouse warning labels; ParaLin++ again matches the reference.</figcaption>
-      </figure>
-    </div>
-  </div>
-</section>
+    <p class="tblcap">Table: industrial-benchmark audit on FLUX.1-dev. The same pattern holds across guidance strengths (CFG 0–14) and on Ming-Flash-Omni 2.0, where ParaLin++ keeps the Euler-level profile (GenEval 0.87 vs. 0.88; DPG-Bench 86.99 vs. 86.86; LongTextBench 0.95 vs. 0.95) at 1.21×.</p>
 
-<!-- ===================== METHOD ===================== -->
-<section id="method" style="padding-top:0">
-  <div class="wrap">
-    <h2>ParaLin++: the Step-Parity Route</h2>
-    <p class="lead">Instead of shortening the discretization, keep the complete <i>N</i>-step system and solve its
-    coupled integration equations <b>in parallel</b>. ParaLin++ strengthens our conference ParaLin with four components:</p>
-    <div class="card">
-      <figure>
-        <img src="assets/paralinpp_pipeline.png" alt="ParaLin++ pipeline">
-        <figcaption>From full-nonlinear parallel refinement to a partially linear system with SOR and adaptive stopping.</figcaption>
-      </figure>
-      <ul class="tick">
-        <li><b>Adaptive nonlinearization</b> — a ϱ-nonlinear partial-linear system: only the first ϱ blocks stay nonlinear; the rest become linear with reused clean-sample predictions.</li>
-        <li><b>Successive over-relaxation (SOR)</b> — provably stable for 0 &lt; ω &lt; 2/(1+L), accelerating contraction of both nonlinear and linear blocks.</li>
-        <li><b>Sliding window</b> — bounds the working set for long trajectories (e.g., 1000-step DDPM).</li>
-        <li><b>Adaptive stopping</b> — relative historical-error test with an exponential moving average.</li>
-      </ul>
-      <p class="muted">Theory: an <b>accumulated error bound</b> to the exact sequential trajectory and convergence of the iteration to the
-      ϱ-nonlinear surrogate system within K ≤ N iterations.</p>
-    </div>
-  </div>
-</section>
+    <p class="title is-3 mt-6 has-text-centered"> See the Difference </p>
+    <p class="subtitle is-5 has-text-centered mb-5">
+      Rows: production benchmarks (GenEval / DPG-Bench / LongTextBench).<br />
+      Columns: 30-step Euler, 16-step UniPC, 16-step DPMSolver++, 30-step ParaLin++.
+    </p>
+    <img src="./static/images/flux_industrial_visual.png" width="100%">
+    <p class="has-text-centered is-size-6 mt-2">FLUX.1-dev: few-step results keep plausible low-level appearance but break semantics — the pizza gains hole artifacts, the F1 car and boat deform, and the autumn-poster text vanishes; ParaLin++ stays aligned with the Euler reference.</p>
+    <img src="./static/images/ming_industrial_visual.png" width="100%" class="mt-5">
+    <p class="has-text-centered is-size-6 mt-2">Ming-Flash-Omni 2.0: few-step solvers recolor the elephant/banana scene, wash out the desk scene, and corrupt the warehouse warning labels; ParaLin++ again matches the reference.</p>
 
-<!-- ===================== BIBTEX ===================== -->
-<section id="bibtex" style="padding-top:0">
-  <div class="wrap">
-    <h2>Citation</h2>
-    <pre>@article{lu2026paralinpp,
+
+    <p class="title is-3 mt-6 has-text-centered"> The Problem with Few-Step Solvers </p>
+    <p class="content is-size-5 has-text-justified">
+      Step-shortening solvers (DDIM, DPMSolver++, UniPC) buy fewer discrete steps by altering the prompt-conditioned trajectory — and the altered trajectory is exactly what breaks dense-prompt and text fidelity; FID merely fails to reflect this break because it overlooks sample-level semantics. Parallel sampling instead keeps all N discrete steps and removes only the solver's temporal dependency. We call this the <b>step-parity</b> route, and ParaLin++ is its strongest realization.
+    </p>
+
+
+    <p class="title is-3 mt-6 has-text-centered"> Our Solution: ParaLin++ </p>
+    <p class="content is-size-5 has-text-justified">
+      <b>ParaLin++</b> reinterprets sequential sampling as a mixed system of linear and nonlinear equations and solves it in parallel. Building on our conference ParaLin, it combines four components:
+    </p>
+    <div class="columns is-vcentered mt-4">
+      <div class="column">
+        <div class="icon-text">
+          <span class="icon"><i class="fas fa-bolt"></i></span>
+          <div class="ml-4">
+            <p class="icon-text-title">Adaptive Nonlinearization (ϱ-nonlinear system)</p>
+            <p class="is-size-5 has-text-justified">Only the first ϱ blocks stay nonlinear; the rest become linear with reused clean-sample predictions, drastically cutting NFE.</p>
+          </div>
+        </div>
+      </div>
+      <div class="column">
+        <div class="icon-text">
+          <span class="icon"><i class="fas fa-forward"></i></span>
+          <div class="ml-4">
+            <p class="icon-text-title">Successive Over-Relaxation</p>
+            <p class="is-size-5 has-text-justified">Provably stable for 0 &lt; ω &lt; 2/(1+L), accelerating contraction of both nonlinear and linear blocks.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="columns is-vcentered mt-2">
+      <div class="column">
+        <div class="icon-text">
+          <span class="icon"><i class="fas fa-window-restore"></i></span>
+          <div class="ml-4">
+            <p class="icon-text-title">Sliding Window</p>
+            <p class="is-size-5 has-text-justified">Bounds the working set for long trajectories such as 1000-step DDPM.</p>
+          </div>
+        </div>
+      </div>
+      <div class="column">
+        <div class="icon-text">
+          <span class="icon"><i class="fas fa-check-circle"></i></span>
+          <div class="ml-4">
+            <p class="icon-text-title">Adaptive Stopping</p>
+            <p class="is-size-5 has-text-justified">A relative historical-error test with an exponential moving average terminates iterations precisely.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="content is-size-5 has-text-justified mt-4">
+      Theory: an <b>accumulated error bound</b> relative to the exact sequential trajectory, and convergence of the iteration to the ϱ-nonlinear surrogate system within K ≤ N iterations.
+    </p>
+
+
+    <p class="title is-3 mt-6 has-text-centered"> How It Works: The Partially Linear Pipeline </p>
+    <p class="content is-size-5 has-text-justified">
+      Instead of treating all steps as computationally expensive nonlinear operations, our method linearizes most of the sampling process. As shown in the pipeline below, only a small number of steps (the "Nonlinear Region" ϱ) require full model evaluations. The remaining steps ("Linear Region") are solved with a highly efficient linear solver, dramatically reducing NFE and unleashing parallel efficiency.
+    </p>
+
+    <img src="./static/videos/process.gif" width="100%">
+
+
+    <p class="title is-3 mt-6 has-text-centered">Preserving Quality: Intermediate Step Comparison</p>
+    <p class="subtitle is-5 has-text-centered mb-5">
+      Our method converges to a high-fidelity image in significantly fewer iterations, demonstrating efficiency without sacrificing quality.
+    </p>
+
+    <img src="./static/images/quality_comparison1.png" alt="Comparison 1" width="100%">
+    <p class="has-text-centered is-size-6 mt-2">Comparison 1: Expediting DDIM (50 steps). <br />The rows, from top to bottom, represent DDIM, ParaDiGMS, ParaSolver, ParaLin, and ParaLin++ (the last two shown under their former ParaSolver-Turbo-series names).</p>
+
+    <img src="./static/images/quality_comparison2.png" alt="Comparison 2" width="100%" class="mt-5">
+    <p class="has-text-centered is-size-6 mt-2">Comparison 2: Visual comparison of samplers (50-step DDIM baseline)</p>
+
+
+    <p class="title is-3 mt-6 has-text-centered"> Quantitative Results </p>
+    <p class="content is-size-5 has-text-justified">
+      ParaLin++ sets a new state of the art in accelerating diffusion sampling. On <b>Stable Diffusion-v2</b> (classifier guidance w = 7.5) and <b>LSUN Church</b> (5000 samples), it consistently achieves the lowest wall-clock time and iteration counts, with negligible change in FID or CLIP scores, even on a single GPU.
+    </p>
+
+    <h4 class="has-text-centered is-size-5 mt-4" style="font-weight:650">Stable Diffusion-v2</h4>
+    <div style="overflow-x:auto">
+    <table class="rt">
+      <tr><th>Steps</th><th>Method</th><th>Iters ↓</th><th>NFE ↓</th><th>CLIP ↑</th><th>FID ↓</th><th>Time (s) ↓</th><th>Speedup ↑</th></tr>
+      <tr><td rowspan="5">1000</td><td>DDPM</td><td>1000</td><td>1000</td><td>25.6</td><td>55.9</td><td>128.0</td><td>1.0×</td></tr>
+      <tr><td>DDPM + ParaDiGMS</td><td>65</td><td>2024</td><td>25.6</td><td>55.6</td><td>32.8</td><td>3.9×</td></tr>
+      <tr><td>DDPM + ParaSolver</td><td>32</td><td>1065</td><td>25.6</td><td>55.3</td><td>15.9</td><td>8.1×</td></tr>
+      <tr><td>DDPM + ParaLin</td><td>32</td><td>195</td><td>25.6</td><td>55.7</td><td>3.2</td><td>40.0×</td></tr>
+      <tr class="hl"><td>DDPM + ParaLin++</td><td><b>29</b></td><td><b>162</b></td><td>25.6</td><td>55.3</td><td><b>2.0</b></td><td class="up">64.1×</td></tr>
+      <tr><td rowspan="5">50</td><td>DDIM</td><td>50</td><td>50</td><td>25.6</td><td>57.2</td><td>6.3</td><td>1.0×</td></tr>
+      <tr><td>DDIM + ParaDiGMS</td><td>21</td><td>132</td><td>25.6</td><td>56.9</td><td>3.3</td><td>1.9×</td></tr>
+      <tr><td>DDIM + ParaSolver</td><td>13</td><td>83</td><td>25.6</td><td>56.9</td><td>1.9</td><td>3.3×</td></tr>
+      <tr><td>DDIM + ParaLin</td><td>13</td><td>73</td><td>25.6</td><td>57.1</td><td>1.6</td><td>3.9×</td></tr>
+      <tr class="hl"><td>DDIM + ParaLin++</td><td><b>10</b></td><td><b>69</b></td><td>25.5</td><td>57.0</td><td><b>1.3</b></td><td class="up">4.8×</td></tr>
+      <tr><td rowspan="5">25</td><td>DDIM</td><td>25</td><td>25</td><td>25.4</td><td>62.9</td><td>3.4</td><td>1.0×</td></tr>
+      <tr><td>DDIM + ParaDiGMS</td><td>18</td><td>53</td><td>25.4</td><td>62.8</td><td>3.2</td><td>1.2×</td></tr>
+      <tr><td>DDIM + ParaSolver</td><td>11</td><td>49</td><td>25.4</td><td>61.9</td><td>1.2</td><td>2.8×</td></tr>
+      <tr><td>DDIM + ParaLin</td><td>11</td><td>42</td><td>25.4</td><td>61.8</td><td>1.1</td><td>3.1×</td></tr>
+      <tr class="hl"><td>DDIM + ParaLin++</td><td><b>9</b></td><td><b>40</b></td><td>25.4</td><td>61.9</td><td><b>0.9</b></td><td class="up">3.7×</td></tr>
+      <tr><td rowspan="5">50</td><td>DPMSolver</td><td>50</td><td>50</td><td>25.6</td><td>57.2</td><td>6.3</td><td>1.0×</td></tr>
+      <tr><td>DPMSolver + ParaDiGMS</td><td>25</td><td>132</td><td>25.6</td><td>57.2</td><td>3.3</td><td>1.8×</td></tr>
+      <tr><td>DPMSolver + ParaSolver</td><td>15</td><td>96</td><td>25.6</td><td>57.1</td><td>2.2</td><td>3.1×</td></tr>
+      <tr><td>DPMSolver + ParaLin</td><td>14</td><td>93</td><td>25.6</td><td>57.1</td><td>1.7</td><td>3.9×</td></tr>
+      <tr class="hl"><td>DPMSolver + ParaLin++</td><td><b>10</b></td><td><b>77</b></td><td>25.6</td><td>57.1</td><td><b>1.2</b></td><td class="up">5.2×</td></tr>
+      <tr><td rowspan="5">25</td><td>DPMSolver</td><td>25</td><td>25</td><td>25.4</td><td>62.3</td><td>3.2</td><td>1.0×</td></tr>
+      <tr><td>DPMSolver + ParaDiGMS</td><td>15</td><td>81</td><td>25.4</td><td>62.3</td><td>2.2</td><td>1.5×</td></tr>
+      <tr><td>DPMSolver + ParaSolver</td><td>11</td><td>58</td><td>25.4</td><td>62.2</td><td>1.5</td><td>2.1×</td></tr>
+      <tr><td>DPMSolver + ParaLin</td><td>10</td><td>55</td><td>25.4</td><td>62.1</td><td>1.2</td><td>2.7×</td></tr>
+      <tr class="hl"><td>DPMSolver + ParaLin++</td><td><b>8</b></td><td><b>46</b></td><td>25.4</td><td>62.1</td><td><b>0.9</b></td><td class="up">3.6×</td></tr>
+    </table>
+    </div>
+
+    <h4 class="has-text-centered is-size-5 mt-5" style="font-weight:650">LSUN Church (5000 samples)</h4>
+    <div style="overflow-x:auto">
+    <table class="rt">
+      <tr><th>Steps</th><th>Method</th><th>Iters ↓</th><th>NFE ↓</th><th>FID ↓</th><th>Time (s) ↓</th><th>Speedup ↑</th></tr>
+      <tr><td rowspan="5">1000</td><td>DDPM</td><td>1000</td><td>1000</td><td>12.7</td><td>50.0</td><td>1.0×</td></tr>
+      <tr><td>DDPM + ParaDiGMS</td><td>65</td><td>2082</td><td>12.5</td><td>10.8</td><td>4.6×</td></tr>
+      <tr><td>DDPM + ParaSolver</td><td>42</td><td>1079</td><td>12.7</td><td>4.1</td><td>12.1×</td></tr>
+      <tr><td>DDPM + ParaLin</td><td>42</td><td>196</td><td>12.7</td><td>1.0</td><td>50.0×</td></tr>
+      <tr class="hl"><td>DDPM + ParaLin++</td><td>17</td><td>136</td><td>12.6</td><td><b>0.7</b></td><td class="up">71.4×</td></tr>
+      <tr><td rowspan="5">50</td><td>DDIM</td><td>50</td><td>50</td><td>15.5</td><td>1.8</td><td>1.0×</td></tr>
+      <tr><td>DDIM + ParaDiGMS</td><td>23</td><td>202</td><td>15.8</td><td>1.5</td><td>1.2×</td></tr>
+      <tr><td>DDIM + ParaSolver</td><td>14</td><td>73</td><td>15.7</td><td>0.8</td><td>2.2×</td></tr>
+      <tr><td>DDIM + ParaLin</td><td>14</td><td>67</td><td>15.7</td><td>0.6</td><td>3.0×</td></tr>
+      <tr class="hl"><td>DDIM + ParaLin++</td><td>9</td><td>64</td><td>15.7</td><td><b>0.4</b></td><td class="up">4.5×</td></tr>
+      <tr><td rowspan="5">25</td><td>DDIM</td><td>25</td><td>25</td><td>15.6</td><td>1.1</td><td>1.0×</td></tr>
+      <tr><td>DDIM + ParaDiGMS</td><td>15</td><td>96</td><td>15.7</td><td>0.8</td><td>1.4×</td></tr>
+      <tr><td>DDIM + ParaSolver</td><td>10</td><td>44</td><td>15.7</td><td>0.5</td><td>2.2×</td></tr>
+      <tr><td>DDIM + ParaLin</td><td>10</td><td>39</td><td>15.7</td><td>0.4</td><td>2.8×</td></tr>
+      <tr class="hl"><td>DDIM + ParaLin++</td><td>8</td><td>33</td><td>15.7</td><td><b>0.3</b></td><td class="up">3.6×</td></tr>
+    </table>
+    </div>
+
+
+    <p class="title is-3 mt-6 has-text-centered"> Citation </p>
+    <pre class="bib">@article{lu2026paralinpp,
   title   = {Back to the Drawing Board: A Critical Evaluation of Few-Step Solvers
              for Production Diffusion Models},
   author  = {Lu, Jianrong and Zhu, Zhiyu and Liu, Hui and Hou, Junhui},
   journal = {arXiv preprint},
   year    = {2026}
 }</pre>
-    <p class="notice" style="margin-top:18px">🚧 Code and full experiment configs are being cleaned for release on this repository. The conference version (ParaLin / ParaSolver) is available at
-    <a href="https://github.com/Jianrong-Lu/ParaSolver">github.com/Jianrong-Lu/ParaSolver</a>.</p>
+
   </div>
-</section>
+  </section>
 
-<div class="footer">
-  <div class="wrap">ParaLin++ Project Page · © 2026 Jianrong Lu et al. · Hosted on GitHub Pages</div>
-</div>
-
-</body>
+  </body>
 </html>
