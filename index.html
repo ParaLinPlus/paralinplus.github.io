@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="description"
-          content="ParaLin++: a step-parity parallel sampling solver for production diffusion models. Our industrial-quality audit shows FID-lossless few-step solvers are not production-ready; ParaLin++ keeps the full-step profile at 1.68x (FLUX) and up to 71.4x (1000-step DDPM).">
+          content="ParaLin++: a step-parity parallel sampling solver for production diffusion models. Our industrial-quality audit shows FID-lossless few-step solvers are not production-ready; ParaLin++ keeps the full-step profile at 1.68x (FLUX) and 3.6x-5.2x (SD-v2 / LSUN Church).">
     <meta name="keywords" content="Diffusion Models, Flow Matching, Parallel Sampling, Few-Step Solvers, GenEval, DPG-Bench, LongTextBench, Production Diffusion, ParaLin++">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ParaLin++ | Back to the Drawing Board: A Critical Evaluation of Few-Step Solvers for Production Diffusion Models</title>
@@ -118,7 +118,7 @@
 
      <p class="title is-3 mt-5 has-text-centered"> Abstract </p>
      <p class="content is-size-5 has-text-justified">
-       While recent works have indicated that training-free few-step sampling solvers can achieve nearly quality-lossless acceleration for diffusion and flow-matching models, their real impact on production diffusion generation is not fully understood. In this work, we develop a comprehensive systematization for training-free few-step sampling on diffusion models by enumerating the quality metrics that the literature and industry actually use to judge sampling acceleration. We present a critical analysis under practical production environments, characterizing the realistic quality dimensions a service cares about—human-preference alignment, aesthetic quality, dense instruction following, and in-image long-text rendering—which the standard FID/CLIP protocol overlooks. Our findings are rather surprising: contrary to the established belief that few-step solvers are virtually quality-lossless, we show that they remain near-lossless only on simple distribution-alignment metrics yet degrade substantially under the metrics a production service actually cares about, and thus deliver no effective few-step acceleration. We go even further and propose <b>ParaLin++</b>, a novel state-of-the-art parallel sampling method built on our conference ParaLin, and show via an extensive set of experiments across Stable Diffusion-v2, LSUN Church, FLUX.1-dev, and Ming-Flash-Omni 2.0 that it preserves the full-step Euler quality profile at <b>3.6×–5.2×</b> (up to <b>71.4×</b> at 1000 steps), <b>1.68×</b> on FLUX and <b>1.21×</b> on Ming.
+       While recent works have indicated that training-free few-step sampling solvers can achieve nearly quality-lossless acceleration for diffusion and flow-matching models, their real impact on production diffusion generation is not fully understood. In this work, we develop a comprehensive systematization for training-free few-step sampling on diffusion models by enumerating the quality metrics that the literature and industry actually use to judge sampling acceleration. We present a critical analysis under practical production environments, characterizing the realistic quality dimensions a service cares about—human-preference alignment, aesthetic quality, dense instruction following, and in-image long-text rendering—which the standard FID/CLIP protocol overlooks. Our findings are rather surprising: contrary to the established belief that few-step solvers are virtually quality-lossless, we show that they remain near-lossless only on simple distribution-alignment metrics yet degrade substantially under the metrics a production service actually cares about, and thus deliver no effective few-step acceleration. We go even further and propose <b>ParaLin++</b>, a novel state-of-the-art parallel sampling method built on our conference ParaLin, and show via an extensive set of experiments across Stable Diffusion-v2, LSUN Church, FLUX.1-dev, and Ming-Flash-Omni 2.0 that it preserves the full-step Euler quality profile at <b>3.6×–5.2×</b>, <b>1.68×</b> on FLUX and <b>1.21×</b> on Ming.
      </p>
 
     <p class="title is-3 mt-6 has-text-centered"> The Metric Gap </p>
@@ -212,7 +212,7 @@
           <span class="icon"><i class="fas fa-window-restore"></i></span>
           <div class="ml-4">
             <p class="icon-text-title">Sliding Window</p>
-            <p class="is-size-5 has-text-justified">Bounds the working set for long trajectories such as 1000-step DDPM.</p>
+            <p class="is-size-5 has-text-justified">Bounds the working set for long sampling trajectories.</p>
           </div>
         </div>
       </div>
@@ -260,11 +260,6 @@
     <div style="overflow-x:auto">
     <table class="rt">
       <tr><th>Steps</th><th>Method</th><th>Iters ↓</th><th>NFE ↓</th><th>CLIP ↑</th><th>FID ↓</th><th>Time (s) ↓</th><th>Speedup ↑</th></tr>
-      <tr><td rowspan="5">1000</td><td>DDPM</td><td>1000</td><td>1000</td><td>25.6</td><td>55.9</td><td>128.0</td><td>1.0×</td></tr>
-      <tr><td>DDPM + ParaDiGMS</td><td>65</td><td>2024</td><td>25.6</td><td>55.6</td><td>32.8</td><td>3.9×</td></tr>
-      <tr><td>DDPM + ParaSolver</td><td>32</td><td>1065</td><td>25.6</td><td>55.3</td><td>15.9</td><td>8.1×</td></tr>
-      <tr><td>DDPM + ParaLin</td><td>32</td><td>195</td><td>25.6</td><td>55.7</td><td>3.2</td><td>40.0×</td></tr>
-      <tr class="hl"><td>DDPM + ParaLin++</td><td><b>29</b></td><td><b>162</b></td><td>25.6</td><td>55.3</td><td><b>2.0</b></td><td class="up">64.1×</td></tr>
       <tr><td rowspan="5">50</td><td>DDIM</td><td>50</td><td>50</td><td>25.6</td><td>57.2</td><td>6.3</td><td>1.0×</td></tr>
       <tr><td>DDIM + ParaDiGMS</td><td>21</td><td>132</td><td>25.6</td><td>56.9</td><td>3.3</td><td>1.9×</td></tr>
       <tr><td>DDIM + ParaSolver</td><td>13</td><td>83</td><td>25.6</td><td>56.9</td><td>1.9</td><td>3.3×</td></tr>
@@ -292,11 +287,6 @@
     <div style="overflow-x:auto">
     <table class="rt">
       <tr><th>Steps</th><th>Method</th><th>Iters ↓</th><th>NFE ↓</th><th>FID ↓</th><th>Time (s) ↓</th><th>Speedup ↑</th></tr>
-      <tr><td rowspan="5">1000</td><td>DDPM</td><td>1000</td><td>1000</td><td>12.7</td><td>50.0</td><td>1.0×</td></tr>
-      <tr><td>DDPM + ParaDiGMS</td><td>65</td><td>2082</td><td>12.5</td><td>10.8</td><td>4.6×</td></tr>
-      <tr><td>DDPM + ParaSolver</td><td>42</td><td>1079</td><td>12.7</td><td>4.1</td><td>12.1×</td></tr>
-      <tr><td>DDPM + ParaLin</td><td>42</td><td>196</td><td>12.7</td><td>1.0</td><td>50.0×</td></tr>
-      <tr class="hl"><td>DDPM + ParaLin++</td><td>17</td><td>136</td><td>12.6</td><td><b>0.7</b></td><td class="up">71.4×</td></tr>
       <tr><td rowspan="5">50</td><td>DDIM</td><td>50</td><td>50</td><td>15.5</td><td>1.8</td><td>1.0×</td></tr>
       <tr><td>DDIM + ParaDiGMS</td><td>23</td><td>202</td><td>15.8</td><td>1.5</td><td>1.2×</td></tr>
       <tr><td>DDIM + ParaSolver</td><td>14</td><td>73</td><td>15.7</td><td>0.8</td><td>2.2×</td></tr>
