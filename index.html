@@ -176,6 +176,15 @@
     <p class="has-text-centered is-size-6 mt-2">Ming-Flash-Omni 2.0: few-step solvers recolor the elephant/banana scene, wash out the desk scene, and corrupt the warehouse warning labels; ParaLin++ again matches the reference.</p>
 
 
+    <p class="title is-3 mt-6 has-text-centered"> Robust Across Guidance Strengths </p>
+    <p class="subtitle is-5 has-text-centered mb-5">
+      Rows: guidance scale (CFG 0 / 3.5 / 7 / 10.5 / 14).<br />
+      Columns: 30-step Euler, 20-step UniPC, 20-step DPMSolver++, 30-step ParaLin++. All cells use DPG-Bench prompt 100.
+    </p>
+    <img src="./static/images/flux_cfg_sweep_dpg_visual.jpg" width="100%">
+    <p class="has-text-centered is-size-6 mt-2">DPG-Bench CFG sweep on FLUX.1-dev: as guidance rises, 20-step UniPC / DPMSolver++ drop objects and flatten scene structure, while step-parity ParaLin++ stays aligned with the 30-step Euler reference at every guidance setting.</p>
+
+
     <p class="title is-3 mt-6 has-text-centered"> The Problem with Few-Step Solvers </p>
     <p class="content is-size-5 has-text-justified">
       Step-shortening solvers (DDIM, DPMSolver++, UniPC) buy fewer discrete steps by altering the prompt-conditioned trajectory — and the altered trajectory is exactly what breaks dense-prompt and text fidelity; FID merely fails to reflect this break because it overlooks sample-level semantics. Parallel sampling instead keeps all N discrete steps and removes only the solver's temporal dependency. We call this the <b>step-parity</b> route, and ParaLin++ is its strongest realization.
