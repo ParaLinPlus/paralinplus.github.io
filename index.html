@@ -3,10 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="description"
-          content="ParaLin++: a step-parity parallel sampling solver for production diffusion models. Our industrial-quality audit shows FID-lossless few-step solvers are not production-ready; ParaLin++ keeps the full-step profile at 1.68x (FLUX) and 2.6x-4.8x (SD-v2 / LSUN Church).">
-    <meta name="keywords" content="Diffusion Models, Flow Matching, Parallel Sampling, Few-Step Solvers, GenEval, DPG-Bench, LongTextBench, Production Diffusion, ParaLin++">
+          content="ParaLin++: a step-parity parallel sampling solver that preserves the full-step discretization while accelerating diffusion and flow-matching models. It maintains the Euler-level generation-quality profile at 1.68x on FLUX.1-dev and 1.21x on Ming-Flash-Omni 2.0, and 2.6x-4.8x on Stable Diffusion-v2 and LSUN Church.">
+    <meta name="keywords" content="Diffusion Models, Flow Matching, Parallel Sampling, Few-Step Solvers, GenEval, DPG-Bench, LongTextBench, Step-Parity, ParaLin++">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ParaLin++ | Back to the Drawing Board: A Critical Evaluation of Few-Step Solvers for Production Diffusion Models</title>
+    <title>ParaLin++ | Accelerating Parallel Diffusion Integrator via Intrinsic Partially Linear Structure</title>
 
     <script async src="https://www.google-analytics.com/analytics.js"></script>
     <script>
@@ -65,8 +65,8 @@
 <body>
   <section class="section">
   <div class="container has-text-centered">
-    <span class="venue-badge">arXiv Preprint &nbsp;·&nbsp; Extension of our conference ParaLin</span>
-    <p class="title publication-title">Back to the Drawing Board:<br>A Critical Evaluation of Few-Step Solvers for Production Diffusion Models</p>
+    <span class="venue-badge">Manuscript under Review &nbsp;·&nbsp; IEEE TPAMI</span>
+    <p class="title publication-title">ParaLin++: Accelerating Parallel Diffusion Integrator<br>via Intrinsic Partially Linear Structure</p>
 
     <div class="is-size-4 publication-authors">
         <span class="author-block">Jianrong Lu<sup>1</sup> </span>
@@ -118,12 +118,12 @@
 
      <p class="title is-3 mt-5 has-text-centered"> Abstract </p>
      <p class="content is-size-5 has-text-justified">
-       While recent works have indicated that training-free few-step sampling solvers can achieve nearly quality-lossless acceleration for diffusion and flow-matching models, their real impact on production diffusion generation is not fully understood. In this work, we develop a comprehensive systematization for training-free few-step sampling on diffusion models by enumerating the quality metrics that the literature and industry actually use to judge sampling acceleration. We present a critical analysis under practical production environments, characterizing the realistic quality dimensions a service cares about—human-preference alignment, aesthetic quality, dense instruction following, and in-image long-text rendering—which the standard FID/CLIP protocol overlooks. Our findings are rather surprising: contrary to the established belief that few-step solvers are virtually quality-lossless, we show that they remain near-lossless only on simple distribution-alignment metrics yet degrade substantially under the metrics a production service actually cares about, and thus deliver no effective few-step acceleration. We go even further and propose <b>ParaLin++</b>, a novel state-of-the-art parallel sampling method built on our conference ParaLin, and show via an extensive set of experiments across Stable Diffusion-v2, LSUN Church, FLUX.1-dev, and Ming-Flash-Omni 2.0 that it preserves the full-step Euler quality profile at <b>2.6×–4.8×</b>, <b>1.68×</b> on FLUX and <b>1.21×</b> on Ming.
+       Training-free few-step samplers are often described as nearly quality-lossless under conventional FID/CLIP-style evaluation. It remains unclear whether that conclusion transfers to more realistic and complex generation-quality benchmarks. We first systematize the quality metrics used to evaluate training-free sampling acceleration for diffusion and flow-matching models. We find that representative step-shortening methods often remain nearly lossless under FID/CLIP-class metrics, yet can suffer substantial quality degradation when evaluated with semantic-composition, dense-instruction, and long-text-rendering benchmarks such as GenEval, DPG-Bench, and LongTextBench. Parallel sampling is a notable exception: by retaining the full-step discretization and removing only the solver’s temporal dependency, it can preserve near-lossless quality while accelerating sampling. Building on this observation, we propose <b>ParaLin++</b>, a step-parity parallel sampler that preserves the full-step discretization while accelerating the solver iterations. Experiments across Stable Diffusion-v2, LSUN Church, FLUX.1-dev, and Ming-Flash-Omni 2.0 show that ParaLin++ preserves the full-step Euler quality profile at <b>2.6×–4.8×</b>, <b>1.68×</b> on FLUX, and <b>1.21×</b> on Ming.
      </p>
 
     <p class="title is-3 mt-6 has-text-centered"> The Metric Gap </p>
     <p class="content is-size-5 has-text-justified">
-      The decisive axis of a training-free accelerator is the <b>metric</b> that certifies it “quality-lossless”, not the speed lever it uses. The academic literature stops at distributional and text-alignment proxies, while production services are judged on a much deeper quality profile:
+      The decisive axis of a training-free accelerator is the <b>metric</b> that certifies it “quality-lossless”, not the speed lever it uses. Much of the literature stops at distributional and text-alignment proxies, while generation quality is judged on a broader measurable profile:
     </p>
     <div class="columns mt-4">
       <div class="column">
@@ -133,67 +133,68 @@
             <li><b>FID / sFID / IS</b> — distribution-to-distribution alignment only</li>
             <li><b>CLIP score / CLIP-FID</b> — coarse prompt–image embedding similarity</li>
           </ul>
-          <p class="mt-2" style="color:#666;font-size:15px">Outdated for production: blind to sample-level semantics, dense instructions, aesthetics, and in-image text.</p>
+          <p class="mt-2" style="color:#666;font-size:15px">Insufficient for the generation-quality audit: blind to sample-level semantics, dense instructions, and in-image text.</p>
         </div>
       </div>
       <div class="column">
         <div class="gapcard">
-          <h4>🏭 What production requires</h4>
+          <h4>🎯 What generation quality requires</h4>
           <ul>
             <li><b>GenEval</b> — object composition &amp; counting fidelity</li>
             <li><b>DPG-Bench</b> — dense, multi-clause prompt following</li>
             <li><b>LongTextBench</b> — long, legible in-image text</li>
-            <li>Human-preference &amp; aesthetic alignment</li>
           </ul>
         </div>
       </div>
     </div>
 
 
-    <p class="title is-3 mt-6 has-text-centered"> FID-Lossless ≠ Production-Ready </p>
+    <p class="title is-3 mt-6 has-text-centered"> FID-Lossless ≠ Generation-Quality Preservation </p>
     <p class="content is-size-5 has-text-justified">
-      On FLUX.1-dev, 16-step UniPC / DPMSolver++ stay within <b>0.03 FID</b> of the 30-step Euler reference, yet collapse on the industrial profile. <b>ParaLin++</b> keeps all 30 discrete steps, parallelizes the solver iterations, and preserves the Euler-level quality while being faster:
+      On FLUX.1-dev, 16-step UniPC / DPMSolver++ can appear close to the 30-step Euler reference under FID/CLIP-style metrics, yet degrade sharply on generation-quality benchmarks. <b>ParaLin++</b> keeps all 30 discrete steps, parallelizes the solver iterations, and preserves the Euler-level quality while being faster:
     </p>
     <div style="overflow-x:auto">
     <table class="rt">
-      <tr><th>Method</th><th>Regime</th><th>Steps</th><th>FID ↓</th><th>GenEval ↑</th><th>DPG-Bench ↑</th><th>LongTextBench ↑</th><th>Speedup ↑</th></tr>
-      <tr><td>Euler (reference)</td><td>Sequential</td><td>30</td><td>59.96</td><td><b>0.66</b></td><td>83.97</td><td><b>0.27</b></td><td>1.00×</td></tr>
-      <tr><td>UniPC</td><td>Few-step</td><td>16</td><td>59.99</td><td class="down">0.52 (−21%)</td><td class="down">77.46 (−6.5)</td><td class="down">0.09 (−67%)</td><td>1.81×</td></tr>
-      <tr><td>DPMSolver++</td><td>Few-step</td><td>16</td><td>59.97</td><td class="down">0.50 (−24%)</td><td class="down">75.75 (−8.2)</td><td class="down">0.08 (−70%)</td><td>1.85×</td></tr>
-      <tr class="hl"><td>ParaLin++ (ours)</td><td>Step-parity parallel</td><td>30</td><td><b>59.94</b></td><td class="up">0.64</td><td class="up">84.24</td><td class="up">0.26</td><td class="up">1.68×</td></tr>
+      <tr><th>Method</th><th>Regime</th><th>Steps</th><th>GenEval ↑</th><th>DPG-Bench ↑</th><th>LongTextBench ↑</th><th>Speedup ↑</th></tr>
+      <tr><td>Euler (reference)</td><td>Sequential</td><td>30</td><td><b>0.66</b></td><td>83.97</td><td><b>0.27</b></td><td>1.00×</td></tr>
+      <tr><td>UniPC</td><td>Few-step</td><td>16</td><td class="down">0.52 (−21%)</td><td class="down">77.46 (−6.5)</td><td class="down">0.09 (−67%)</td><td>1.81×</td></tr>
+      <tr><td>DPMSolver++</td><td>Few-step</td><td>16</td><td class="down">0.50 (−24%)</td><td class="down">75.75 (−8.2)</td><td class="down">0.08 (−70%)</td><td>1.85×</td></tr>
+      <tr class="hl"><td>ParaLin++ (ours)</td><td>Step-parity parallel</td><td>30</td><td class="up">0.64</td><td class="up">84.24</td><td class="up">0.26</td><td class="up">1.68×</td></tr>
     </table>
     </div>
-    <p class="tblcap">Table: industrial-benchmark audit on FLUX.1-dev. The same pattern holds across guidance strengths (CFG 0–14) and on Ming-Flash-Omni 2.0, where ParaLin++ keeps the Euler-level profile (GenEval 0.87 vs. 0.88; DPG-Bench 86.99 vs. 86.86; LongTextBench 0.95 vs. 0.95) at 1.21×.</p>
+    <p class="tblcap">Table: generation-quality audit on FLUX.1-dev. The same pattern holds across guidance strengths (CFG 0–14) and on Ming-Flash-Omni 2.0, where ParaLin++ keeps the Euler-level profile (GenEval 0.87 vs. 0.88; DPG-Bench 86.99 vs. 86.86; LongTextBench 0.95 vs. 0.95) at 1.21×.</p>
 
     <p class="title is-3 mt-6 has-text-centered"> See the Difference </p>
     <p class="subtitle is-5 has-text-centered mb-5">
-      Rows: production benchmarks (GenEval / DPG-Bench / LongTextBench).<br />
+      Rows: generation-quality benchmarks (GenEval / DPG-Bench / LongTextBench).<br />
       Columns: 30-step Euler, 16-step UniPC, 16-step DPMSolver++, 30-step ParaLin++.
     </p>
     <img src="./static/images/flux_industrial_visual.png" width="100%">
     <p class="has-text-centered is-size-6 mt-2">FLUX.1-dev: few-step results keep plausible low-level appearance but break semantics — the pizza gains hole artifacts, the F1 car and boat deform, and the autumn-poster text vanishes; ParaLin++ stays aligned with the Euler reference.</p>
-    <img src="./static/images/ming_industrial_visual.png" width="100%" class="mt-5">
-    <p class="has-text-centered is-size-6 mt-2">Ming-Flash-Omni 2.0: few-step solvers recolor the elephant/banana scene, wash out the desk scene, and corrupt the warehouse warning labels; ParaLin++ again matches the reference.</p>
 
 
     <p class="title is-3 mt-6 has-text-centered"> Robust Across Guidance Strengths </p>
     <p class="subtitle is-5 has-text-centered mb-5">
       Rows: guidance scale (CFG 0 / 3.5 / 7 / 10.5 / 14).<br />
-      Columns: 30-step Euler, 20-step UniPC, 20-step DPMSolver++, 30-step ParaLin++. All cells use DPG-Bench prompt 100.
+      Columns: 30-step Euler, 20-step UniPC, 20-step DPMSolver++, 30-step ParaLin++.
     </p>
-    <img src="./static/images/flux_cfg_sweep_dpg_visual.jpg" width="100%">
+    <img src="./static/images/flux_cfg_sweep_geneval_visual.jpg" width="100%">
+    <p class="has-text-centered is-size-6 mt-2">GenEval CFG sweep on FLUX.1-dev: ParaLin++ remains close to the Euler reference while few-step UniPC / DPMSolver++ lose semantic composition as guidance changes.</p>
+    <img src="./static/images/flux_cfg_sweep_longtext_en_visual.jpg" width="100%" class="mt-5">
+    <p class="has-text-centered is-size-6 mt-2">LongTextBench CFG sweep on FLUX.1-dev, using an English prompt; the reported metric averages the English and Chinese subsets.</p>
+    <img src="./static/images/flux_cfg_sweep_dpg_visual.jpg" width="100%" class="mt-5">
     <p class="has-text-centered is-size-6 mt-2">DPG-Bench CFG sweep on FLUX.1-dev: as guidance rises, 20-step UniPC / DPMSolver++ drop objects and flatten scene structure, while step-parity ParaLin++ stays aligned with the 30-step Euler reference at every guidance setting.</p>
 
 
     <p class="title is-3 mt-6 has-text-centered"> The Problem with Few-Step Solvers </p>
     <p class="content is-size-5 has-text-justified">
-      Step-shortening solvers (DDIM, DPMSolver++, UniPC) buy fewer discrete steps by altering the prompt-conditioned trajectory — and the altered trajectory is exactly what breaks dense-prompt and text fidelity; FID merely fails to reflect this break because it overlooks sample-level semantics. Parallel sampling instead keeps all N discrete steps and removes only the solver's temporal dependency. We call this the <b>step-parity</b> route, and ParaLin++ is its strongest realization.
+      Step-shortening solvers (DDIM, DPMSolver++, UniPC) buy fewer discrete steps by altering the prompt-conditioned trajectory — and the altered trajectory is exactly what breaks dense-prompt and text fidelity; FID merely fails to reflect this break because it overlooks sample-level semantics. Parallel sampling instead keeps all N discrete steps and removes only the solver's temporal dependency. We call this the <b>step-parity</b> route, and ParaLin++ is a direct realization of this step-parity route.
     </p>
 
 
     <p class="title is-3 mt-6 has-text-centered"> Our Solution: ParaLin++ </p>
     <p class="content is-size-5 has-text-justified">
-      <b>ParaLin++</b> reinterprets sequential sampling as a mixed system of linear and nonlinear equations and solves it in parallel. Building on our conference ParaLin, it combines four components:
+      <b>ParaLin++</b> reinterprets sequential sampling as a mixed system of linear and nonlinear equations and solves it in parallel. It combines four components:
     </p>
     <div class="columns is-vcentered mt-4">
       <div class="column">
@@ -262,7 +263,7 @@
 
     <p class="title is-3 mt-6 has-text-centered"> Quantitative Results </p>
     <p class="content is-size-5 has-text-justified">
-      ParaLin++ sets a new state of the art in accelerating diffusion sampling. On <b>Stable Diffusion-v2</b> (classifier guidance w = 7.5) and <b>LSUN Church</b> (5000 samples), it consistently achieves the lowest wall-clock time and iteration counts, with negligible change in FID or CLIP scores, even on a single GPU.
+      ParaLin++ substantially reduces wall-clock latency while preserving generation quality. On <b>Stable Diffusion-v2</b> (classifier guidance w = 7.5) and <b>LSUN Church</b> (5000 samples), it consistently achieves the lowest wall-clock time and iteration counts, with negligible change in FID or CLIP scores, even on a single GPU.
     </p>
 
     <h4 class="has-text-centered is-size-5 mt-4" style="font-weight:650">Stable Diffusion-v2</h4>
@@ -312,10 +313,10 @@
 
     <p class="title is-3 mt-6 has-text-centered"> Citation </p>
     <pre class="bib">@article{lu2026paralinpp,
-  title   = {Back to the Drawing Board: A Critical Evaluation of Few-Step Solvers
-             for Production Diffusion Models},
+  title   = {ParaLin++: Accelerating Parallel Diffusion Integrator
+             via Intrinsic Partially Linear Structure},
   author  = {Lu, Jianrong and Zhu, Zhiyu and Liu, Hui and Hou, Junhui},
-  journal = {arXiv preprint},
+  journal = {Manuscript under Review},
   year    = {2026}
 }</pre>
 

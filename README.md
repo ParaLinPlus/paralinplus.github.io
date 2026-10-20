@@ -1,10 +1,10 @@
 # ParaLin++
 
-Project page for **"Back to the Drawing Board: A Critical Evaluation of Few-Step Solvers for Production Diffusion Models"** (IEEE TPAMI submission).
+Project page for **"ParaLin++: Accelerating Parallel Diffusion Integrator via Intrinsic Partially Linear Structure"** (IEEE TPAMI submission).
 
-- 🏠 **Homepage**: https://jianrong-lu.github.io/ParaLinPlus/
-- 📄 **Paper**: [paper.pdf](paper.pdf)
+- **Homepage**: https://paralinplus.github.io/
+- **Paper**: [paper.pdf](paper.pdf)
 
-ParaLin++ is a step-parity parallel sampling solver for production diffusion models. Our industrial-quality audit (GenEval / DPG-Bench / LongTextBench) shows that few-step solvers which look "quality-lossless" under FID degrade sharply on the metrics production services care about, while step-parity parallelization preserves the full-step Euler profile (1.68× on FLUX.1-dev, 1.21× on Ming-Flash-Omni 2.0, up to 71.4× at 1000-step DDPM).
+ParaLin++ is a step-parity parallel sampling solver for diffusion and flow-matching models. It preserves the full-step discretization while parallelizing the solver iterations. The project studies generation-quality preservation with GenEval, DPG-Bench, and LongTextBench, and reports 1.68× speedup on FLUX.1-dev, 1.21× on Ming-Flash-Omni 2.0, and 2.6×–4.8× on Stable Diffusion-v2 and LSUN Church.
 
 Conference version (ParaLin / ParaSolver): https://github.com/Jianrong-Lu/ParaSolver
